@@ -395,14 +395,86 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
             var musicId = musicInfo.Id;
             var musicNameKey = $"song_{musicId}";
             var musicArtistKey = $"song_sub_{musicId}";
-            var musicName = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).JapaneseText;
-            var musicArtist = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).JapaneseText;
-            var musicNameEn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).EnglishUsText;
-            var musicArtistEn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).EnglishUsText;
-            var musicNameCn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).ChineseTText;
-            var musicArtistCn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).ChineseTText;
-            var musicNameKo = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).KoreanText;
-            var musicArtistKo = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).KoreanText;
+            string musicName = string.Empty;
+            string musicArtist = string.Empty;
+            string musicNameEn = string.Empty;
+            string musicArtistEn = string.Empty;
+            string musicNameCn = string.Empty;
+            string musicArtistCn = string.Empty;
+            string musicNameKo = string.Empty;
+            string musicArtistKo = string.Empty;
+
+            try
+            {
+                musicName = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).JapaneseText;
+            }
+            catch
+            {
+                musicName = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicArtist = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).JapaneseText;
+            }
+            catch
+            {
+                musicArtist = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicNameEn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).EnglishUsText;
+            }
+            catch
+            {
+                musicNameEn = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicArtistEn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).EnglishUsText;
+            }
+            catch
+            {
+                musicArtistEn = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicNameCn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).ChineseTText;
+            }
+            catch
+            {
+                musicNameCn = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicArtistCn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).ChineseTText;
+            }
+            catch
+            {
+                musicArtistCn = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicNameKo = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).KoreanText;
+            }
+            catch
+            {
+                musicNameKo = ""; // Set to blank if not found
+            }
+
+            try
+            {
+                musicArtistKo = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).KoreanText;
+            }
+            catch
+            {
+                musicArtistKo = ""; // Set to blank if not found
+            }
             var musicGenre = musicInfo.Genre;
             var musicStarEasy = musicInfo.StarEasy;
             var musicStarNormal = musicInfo.StarNormal;
