@@ -11,6 +11,27 @@ public class BaidQueryHandler(
     IGameDataService gameDataService)
     : IRequestHandler<BaidQuery, CommonBaidResponse>
 {
+    static string FormatStringInGroupsOfFour(string input)
+{
+    if (string.IsNullOrEmpty(input))
+        return input;
+
+    // Use a StringBuilder for efficient string manipulation
+    var stringBuilder = new System.Text.StringBuilder();
+    int length = input.Length;
+
+    for (int i = 0; i < length; i++)
+    {
+        if (i > 0 && i % 4 == 0)
+        {
+            stringBuilder.Append(' ');
+        }
+        stringBuilder.Append(input[i]);
+    }
+
+    return stringBuilder.ToString();
+}
+
     public async Task<CommonBaidResponse> Handle(BaidQuery request, CancellationToken cancellationToken)
     {
         var card = await context.Cards.FindAsync(request.AccessCode);
@@ -26,6 +47,7 @@ public class BaidQueryHandler(
         }
 
         var baid = card.Baid;
+        var credential = context.Credentials.Where(cred => cred.Baid == baid).First();
         var userData = await context.UserData.FindAsync(baid, cancellationToken);
         userData.ThrowIfNull($"User not found for card with Baid {baid}!");
 
@@ -52,7 +74,7 @@ public class BaidQueryHandler(
                 crownCount[(int)crownType - 1] = crownCountData.GetValueOrDefault(crownType, (uint)0);
             }
         }
-        
+
         var scoreRankData = songBestData
             .Where(datum => datum.BestCrown >= CrownType.Clear)
             .GroupBy(datum => datum.BestScoreRank)
@@ -65,10 +87,10 @@ public class BaidQueryHandler(
                 scoreRankCount[(int)scoreRank - 2] = scoreRankData.GetValueOrDefault(scoreRank, (uint)0);
             }
         }
-        
+
         List<uint> costumeData = [userData.CurrentKigurumi, userData.CurrentHead, userData.CurrentBody, userData.CurrentFace, userData.CurrentPuchi];
-        
-        List<List<uint>> costumeArrays = 
+
+        List<List<uint>> costumeArrays =
             [userData.UnlockedKigurumi, userData.UnlockedHead, userData.UnlockedBody, userData.UnlockedFace, userData.UnlockedPuchi];
 
         var costumeFlagArrays = gameDataService.GetCostumeFlagArraySizes()
@@ -81,16 +103,16 @@ public class BaidQueryHandler(
         var gaidenData = await context.DanScoreData
             .Where(datum => datum.Baid == baid && datum.DanType == DanType.Gaiden)
             .Include(datum => datum.DanStageScoreData).ToListAsync(cancellationToken);
-        
+
         var maxDan = danData.Where(datum => datum.ClearState != DanClearState.NotClear)
             .Select(datum => datum.DanId)
             .DefaultIfEmpty()
             .Max();
-        
+
         var danDataDictionary = gameDataService.GetCommonDanDataDictionary();
         var danIdList = danDataDictionary.Keys.ToList();
         var gotDanFlagArray = FlagCalculator.ComputeGotDanFlags(danData, danIdList);
-        
+
         var gaidenDataDictionary = gameDataService.GetCommonGaidenDataDictionary();
         var gaidenIdList = gaidenDataDictionary.Keys.ToList();
         var gotGaidenFlagArray = FlagCalculator.ComputeGotDanFlags(gaidenData, gaidenIdList);
@@ -127,13 +149,13 @@ public class BaidQueryHandler(
             GotDanMax = maxDan,
             GotGaidenFlg = gotGaidenFlagArray,
             IsDispAchievementOn = userData.DisplayAchievement,
-            LastPlayDatetime = userData.LastPlayDatetime.ToString(Constants.DateTimeFormat),
+            LastPlayDatetime = userData.LastPlayDatetime.ToString(Constants.DATE_TIME_FORMAT),
             LastPlayMode = userData.LastPlayMode,
             SelectedToneId = userData.SelectedToneId,
-            Title = userData.Title,
+            Title = String.IsNullOrEmpty(credential.Password) ? FormatStringInGroupsOfFour(request.AccessCode) : userData.Title,
             TitlePlateId = userData.TitlePlateId,
             AiTotalWin = (uint)userData.AiWinCount,
             AiRank = aiRank
         };
     }
-}
+    }
