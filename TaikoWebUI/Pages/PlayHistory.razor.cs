@@ -51,6 +51,10 @@ public partial class PlayHistory
             data.ShowDetails = false;
         });
 
+        //We get rid of entries with empty song names
+        //This can happen if the database has been used with a different version of the songlist (Omnimix/Version update)
+        response.SongHistoryData = response.SongHistoryData.FindAll(x => x.MusicName != "");
+
         songHistoryDataMap = response.SongHistoryData.GroupBy(data => data.PlayTime).ToDictionary(data => data.Key,data => data.ToList());
         foreach (var songHistoryDataList in songHistoryDataMap.Values)
         {
@@ -108,7 +112,7 @@ public partial class PlayHistory
 
     private static string GetDifficultyIcon(Difficulty difficulty)
     {
-        return $"<image href='/images/difficulty_{difficulty}.png' alt='{difficulty}' width='24' height='24'/>";
+        return $"<image href='/images/difficulty_{difficulty}.webp' alt='{difficulty}' width='24' height='24'/>";
     }
 
     private static string GetGenreTitle(SongGenre genre)
