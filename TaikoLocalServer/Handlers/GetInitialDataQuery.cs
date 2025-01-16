@@ -17,10 +17,11 @@ public class GetInitialDataQueryHandler(IGameDataService gameDataService,
     
     public Task<CommonInitialDataCheckResponse> Handle(GetInitialDataQuery request, CancellationToken cancellationToken)
     {
-        var songIdMax = settings.EnableMoreSongs ? Constants.MusicIdMaxExpanded : Constants.MusicIdMax;
+        var songIdMax = settings.EnableMoreSongs ? settings.MoreSongsSize : Constants.MusicIdMax;
 
         var musicList = gameDataService.GetMusicList();
         var lockedSongsList = gameDataService.GetLockedSongsList();
+        var lockedUraSongsList = gameDataService.GetLockedUraSongsList();
 
         var enabledArray =
             FlagCalculator.GetBitArrayFromIds(musicList, songIdMax, logger);
@@ -29,7 +30,7 @@ public class GetInitialDataQueryHandler(IGameDataService gameDataService,
         var defaultSongFlg =
             FlagCalculator.GetBitArrayFromIds(defaultSongList, songIdMax, logger);
 
-        var defaultSongWithUraList = gameDataService.GetMusicWithUraList();
+        var defaultSongWithUraList = gameDataService.GetMusicWithUraList().Except(lockedUraSongsList);
         var uraReleaseBit =
             FlagCalculator.GetBitArrayFromIds(defaultSongWithUraList, songIdMax, logger);
 
@@ -50,13 +51,18 @@ public class GetInitialDataQueryHandler(IGameDataService gameDataService,
         }
 
         // TODO: Figure out what they are individually
-        var verupNo1 = new uint[] { 2, 3, 4, 5, 6, 7, 8, 13, 15, 24, 25, 26, 27, 28, 29, 30, 31, 104 };
+        var verupNo1 = new uint[] { 2, 3, 4, 5, 6, 7, 8, 13, 15, 24, 25, 26, 27, 28, 29, 30, 31 };
         var aryVerUp = verupNo1.Select(i => new CommonInitialDataCheckResponse.VerupNoData1
         {
             MasterType = i,
             VerupNo = 1
         }).ToList();
+        CommonInitialDataCheckResponse.VerupNoData1[] verupNo1List =
+        [
+            GetVerupNoData1(Constants.ShopVerupMasterType, gameDataService.GetShopFolderVerup()),
+        ];
         response.AryVerupNoData1s.AddRange(aryVerUp);
+        response.AryVerupNoData1s.AddRange(verupNo1List);
         
         var commonDanDataDictionary = gameDataService.GetCommonDanDataDictionary();
         var commonGaidenDataDictionary = gameDataService.GetCommonGaidenDataDictionary();
@@ -80,6 +86,15 @@ public class GetInitialDataQueryHandler(IGameDataService gameDataService,
         ];
 
         return Task.FromResult(response);
+    }
+
+    private CommonInitialDataCheckResponse.VerupNoData1 GetVerupNoData1(uint masterType, uint verup)
+    {
+        return new CommonInitialDataCheckResponse.VerupNoData1
+        {
+            MasterType = masterType,
+            VerupNo = verup
+        };
     }
     
     private CommonInitialDataCheckResponse.VerupNoData2 GetVerupNoData2<T>(uint masterType, ImmutableDictionary<uint, T> dictionary) 

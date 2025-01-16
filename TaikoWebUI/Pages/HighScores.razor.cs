@@ -11,6 +11,9 @@ public partial class HighScores
     private int selectedDifficultyTab;
     private Dictionary<uint, MusicDetail> musicDetailDictionary = new();
 
+    private string Search { get; set; } = string.Empty;
+    private string GenreFilter { get; set; } = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -36,9 +39,16 @@ public partial class HighScores
             data.MusicArtist = GameDataService.GetMusicArtistBySongId(musicDetailDictionary, songId, string.IsNullOrEmpty(songNameLanguage) ? "ja" : songNameLanguage);
         });
 
+        //We get rid of entries with empty song names
+        //This can happen if the database has been used with a different version of the songlist (Omnimix/Version update)
+        response.SongBestData = response.SongBestData.FindAll(x => x.MusicName != "");
+
         songBestDataMap = response.SongBestData.GroupBy(data => data.Difficulty)
             .ToDictionary(data => data.Key,
                           data => data.ToList());
+
+
+
         foreach (var songBestDataList in songBestDataMap.Values)
         {
             songBestDataList.Sort((data1, data2) => GameDataService.GetMusicIndexBySongId(musicDetailDictionary, data1.SongId)
@@ -82,5 +92,30 @@ public partial class HighScores
     {
         selectedDifficultyTab = index;
         await LocalStorage.SetItemAsync($"highScoresTab", selectedDifficultyTab);
+    }
+
+    private bool FilterSongs(SongBestData songData)
+    {
+        var stringsToCheck = new List<string>
+        {
+            songData.MusicName,
+            songData.MusicArtist,
+            songData.BestScore.ToString(),
+            songData.PlayTime.ToString(),
+        };
+
+        if (songData.IsFavorite) stringsToCheck.Add("Favorite");
+
+        if (!string.IsNullOrEmpty(Search) && !stringsToCheck.Any(s => s.Contains(Search, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(GenreFilter) && songData.Genre != Enum.Parse<SongGenre>(GenreFilter))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

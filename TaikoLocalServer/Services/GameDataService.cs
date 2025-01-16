@@ -35,12 +35,16 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
 
     private List<ShopFolderData> shopFolderList = [];
 
+    private uint shopFolderVerup = 1;
+
     private List<uint> musicUniqueIdList = [];
 
     private List<uint> musicWithUraUniqueIdList = [];
 
     private List<uint> lockedSongsList = [];
-    
+
+    private List<uint> lockedUraSongsList = [];
+
     private readonly Dictionary<uint, MusicDetail> musicDetailDictionary = new();
 
     private readonly List<Costume> costumeList = [];
@@ -101,6 +105,11 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
         return shopFolderList;
     }
 
+    public uint GetShopFolderVerup()
+    {
+        return shopFolderVerup;
+    }
+
     public Dictionary<string, int> GetTokenDataDictionary()
     {
         return tokenDataDictionary;
@@ -111,6 +120,11 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
         return lockedSongsList;
     }
     
+    public List<uint> GetLockedUraSongsList()
+    {
+        return lockedUraSongsList;
+    }
+
     public Dictionary<uint, MusicDetail> GetMusicDetailDictionary()
     {
         return musicDetailDictionary;
@@ -223,6 +237,8 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
         {
             throw new FileNotFoundException($"{Path.GetFileName(filePath)} file not found!");
         }
+
+        shopFolderVerup = (uint)((File.GetLastWriteTime(shopFolderDataPath).ToFileTime() / 1000) % (1L << 32));
 
         await using var musicInfoFile = File.OpenRead(musicInfoPath);
         await using var danDataFile = File.OpenRead(danDataPath);
@@ -376,6 +392,7 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
     {
         lockedSongsData.ThrowIfNull("Shouldn't happen!");
         lockedSongsList = lockedSongsData["songNo"].ToList();
+        lockedUraSongsList = lockedSongsData["uraSongNo"].ToList();
     }
     
     private void InitializeMusicDetails(MusicInfos? musicInfoData, MusicOrder? musicOrderData, WordList? wordlistData)
@@ -395,86 +412,15 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
             var musicId = musicInfo.Id;
             var musicNameKey = $"song_{musicId}";
             var musicArtistKey = $"song_sub_{musicId}";
-            string musicName = string.Empty;
-            string musicArtist = string.Empty;
-            string musicNameEn = string.Empty;
-            string musicArtistEn = string.Empty;
-            string musicNameCn = string.Empty;
-            string musicArtistCn = string.Empty;
-            string musicNameKo = string.Empty;
-            string musicArtistKo = string.Empty;
-
-            try
-            {
-                musicName = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).JapaneseText;
-            }
-            catch
-            {
-                musicName = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicArtist = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).JapaneseText;
-            }
-            catch
-            {
-                musicArtist = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicNameEn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).EnglishUsText;
-            }
-            catch
-            {
-                musicNameEn = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicArtistEn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).EnglishUsText;
-            }
-            catch
-            {
-                musicArtistEn = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicNameCn = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).ChineseTText;
-            }
-            catch
-            {
-                musicNameCn = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicArtistCn = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).ChineseTText;
-            }
-            catch
-            {
-                musicArtistCn = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicNameKo = wordlistData.WordListEntries.First(entry => entry.Key == musicNameKey).KoreanText;
-            }
-            catch
-            {
-                musicNameKo = ""; // Set to blank if not found
-            }
-
-            try
-            {
-                musicArtistKo = wordlistData.WordListEntries.First(entry => entry.Key == musicArtistKey).KoreanText;
-            }
-            catch
-            {
-                musicArtistKo = ""; // Set to blank if not found
-            }
+            //Using FirstOrDefault because the server could crash when the wordlist had missing song_sub entries.
+            var musicName = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicNameKey)?.JapaneseText ?? "";
+            var musicArtist = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicArtistKey)?.JapaneseText ?? "";
+            var musicNameEn = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicNameKey)?.EnglishUsText ?? "";
+            var musicArtistEn = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicArtistKey)?.EnglishUsText ?? "";
+            var musicNameCn = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicNameKey)?.ChineseTText ?? "";
+            var musicArtistCn = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicArtistKey)?.ChineseTText ?? "";
+            var musicNameKo = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicNameKey)?.KoreanText ?? "";
+            var musicArtistKo = wordlistData.WordListEntries.FirstOrDefault(entry => entry.Key == musicArtistKey)?.KoreanText ?? "";
             var musicGenre = musicInfo.Genre;
             var musicStarEasy = musicInfo.StarEasy;
             var musicStarNormal = musicInfo.StarNormal;
@@ -525,11 +471,17 @@ public class GameDataService(IOptions<DataSettings> dataSettings) : IGameDataSer
 
             var costumeNameKey = $"costume_{cosType}_{costumeId}";
             var costumeName = wordlistData.WordListEntries.First(entry => entry.Key == costumeNameKey).JapaneseText;
+            var costumeNameEn = wordlistData.WordListEntries.First(entry => entry.Key == costumeNameKey).EnglishUsText;
+            var costumeNameCn = wordlistData.WordListEntries.First(entry => entry.Key == costumeNameKey).ChineseTText;
+            var costumeNameKo = wordlistData.WordListEntries.First(entry => entry.Key == costumeNameKey).KoreanText;
             var costume = new Costume
             {
                 CostumeId = costumeId,
                 CostumeType = cosType,
-                CostumeName = costumeName
+                CostumeName = costumeName,
+                CostumeNameEN = costumeNameEn,
+                CostumeNameCN = costumeNameCn,
+                CostumeNameKO = costumeNameKo,
             };
             costumeList.Add(costume);
         }

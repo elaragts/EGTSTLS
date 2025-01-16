@@ -4,14 +4,14 @@
     <MudCardHeader>
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudText Typo="Typo.h6">@Localizer["Play History"]</MudText>
+                <MudText Typo="Typo.h6">@Localizer["Play History"] (@Items.Count)</MudText>
             </MudItem>
         </MudGrid>
     </MudCardHeader>
     @if (Items.Count > 0)
     {
         <MudCardContent Class="pa-0">
-            <MudTable Items="Items" Elevation="0" Striped="true" Dense="true" Breakpoint=Breakpoint.None>
+            <MudTable RowClassFunc="@GetActiveRowClass" Items="Items" Elevation="0" Striped="false" Dense="true" Breakpoint=Breakpoint.None>
                 <HeaderContent>
                     <MudTh>
                         <MudTableSortLabel InitialDirection="SortDirection.Descending" T="SongHistoryData" SortBy="x => x.PlayTime">
@@ -19,17 +19,17 @@
                         </MudTableSortLabel>
                     </MudTh>
                     <MudTh>
-                        <MudTableSortLabel T="SongHistoryData" SortBy="x => x.Difficulty">
+                        <MudTableSortLabel T="SongHistoryData" SortBy="x => (int)x.Difficulty * 1000000 + x.Score">
                             @Localizer["Difficulty"]
                         </MudTableSortLabel>
                     </MudTh>
                     <MudTh>
-                        <MudTableSortLabel T="SongHistoryData" SortBy="x => x.Crown">
+                        <MudTableSortLabel T="SongHistoryData" SortBy="x => (int)x.Crown * 1000000 + x.Score">
                             @Localizer["Crown"]
                         </MudTableSortLabel>
                     </MudTh>
                     <MudTh>
-                        <MudTableSortLabel T="SongHistoryData" SortBy="x => x.ScoreRank">
+                        <MudTableSortLabel T="SongHistoryData" SortBy="x => (int)x.ScoreRank * 1000000 + x.Score">
                             @Localizer["Rank"]
                         </MudTableSortLabel>
                     </MudTh>
@@ -70,12 +70,12 @@
                         <img src="@ScoreUtils.GetDifficultyIcon(context.Difficulty)" alt="@context.Difficulty" title="@context.Difficulty" style="@Constants.ICON_STYLE"/>
                     </MudTd>
                     <MudTd>
-                        <img src="@($"/images/crown_{context.Crown}.png")" alt="@(ScoreUtils.GetCrownText(context.Crown))" title="@(ScoreUtils.GetCrownText(context.Crown))" style="@Constants.ICON_STYLE"/>
+                        <img src="@($"/images/crown_{context.Crown}.webp")" alt="@(ScoreUtils.GetCrownText(context.Crown))" title="@(ScoreUtils.GetCrownText(context.Crown))" style="@Constants.ICON_STYLE"/>
                     </MudTd>
                     <MudTd>
                         @if (context.ScoreRank is not ScoreRank.None)
                         {
-                            <img src="@($"/images/rank_{context.ScoreRank}.png")" alt="@(ScoreUtils.GetRankText(context.ScoreRank))" title="@(ScoreUtils.GetRankText(context.ScoreRank))" style="@Constants.ICON_STYLE"/>
+                            <img src="@($"/images/rank_{context.ScoreRank}.webp")" alt="@(ScoreUtils.GetRankText(context.ScoreRank))" title="@(ScoreUtils.GetRankText(context.ScoreRank))" style="@Constants.ICON_STYLE"/>
                         }
                     </MudTd>
                     <MudTd>@context.Score</MudTd>
@@ -101,4 +101,9 @@
 @code {
     [Parameter] 
     public List<SongHistoryData> Items { get; set; } = new();
+
+    private string GetActiveRowClass(SongHistoryData songHistory, int index)
+    {
+        return Items!.MaxBy(x => x.Score)!.Score == songHistory.Score ? "is-current-user" : "";
+    }
 }

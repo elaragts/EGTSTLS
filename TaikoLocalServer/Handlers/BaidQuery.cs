@@ -63,7 +63,7 @@ public class BaidQueryHandler(
         }
         // For each crown type, calculate how many songs have that crown type
         var crownCountData = songBestData
-            .Where(datum => datum.BestCrown >= CrownType.Clear)
+            .Where(datum => datum.Difficulty == achievementDisplayDifficulty || (achievementDisplayDifficulty == Difficulty.UraOni && datum.Difficulty == Difficulty.Oni))
             .GroupBy(datum => datum.BestCrown)
             .ToDictionary(datums => datums.Key, datums => (uint)datums.Count());
         var crownCount = new uint[3];
@@ -76,7 +76,7 @@ public class BaidQueryHandler(
         }
 
         var scoreRankData = songBestData
-            .Where(datum => datum.BestCrown >= CrownType.Clear)
+            .Where(datum => datum.Difficulty == achievementDisplayDifficulty || (achievementDisplayDifficulty == Difficulty.UraOni && datum.Difficulty == Difficulty.Oni))
             .GroupBy(datum => datum.BestScoreRank)
             .ToDictionary(datums => datums.Key, datums => (uint)datums.Count());
         var scoreRankCount = new uint[7];

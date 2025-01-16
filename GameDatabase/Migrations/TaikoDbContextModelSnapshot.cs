@@ -445,6 +445,10 @@ namespace TaikoLocalServer.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UnlockedUraSongIdList")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Baid");
 
                     b.ToTable("UserData");
